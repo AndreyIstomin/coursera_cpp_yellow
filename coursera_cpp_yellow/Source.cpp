@@ -1,7 +1,7 @@
 using namespace std;
 
-#define WEEK_1
-#define TASK_6
+#define WEEK_2
+#define TASK_2
 
 //#define TESTING_
 
@@ -346,4 +346,185 @@ int main() {
 #endif 
 
 #endif
+#elif defined WEEK_2
+#ifdef TASK_1
+
+enum class QueryType {
+	NewBus,
+	BusesForStop,
+	StopsForBus,
+	AllBuses
+};
+
+struct Query {
+	QueryType type;
+	string bus;
+	string stop;
+	vector<string> stops;
+};
+
+istream& operator >> (istream& is, Query& q) {
+	string operationCode;
+	is >> operationCode;
+	if (operationCode == "NEW_BUS") {
+
+		q.type = QueryType::NewBus;
+		is >> q.bus;
+		int stopCount{ 0 };
+		is >> stopCount;
+		q.stops.resize(stopCount);
+		for (string& stop : q.stops) {
+			is >> stop;
+		}
+	}
+	else if (operationCode == "BUSES_FOR_STOP") {
+		q.type = QueryType::BusesForStop;
+		is >> q.stop;
+	}
+	else if (operationCode == "STOPS_FOR_BUS") {
+		q.type = QueryType::StopsForBus;
+		is >> q.bus;
+	}
+	else if (operationCode == "ALL_BUSES") {
+		q.type = QueryType::AllBuses;
+	}
+	else {
+		throw(runtime_error("Unknown operation code: " + operationCode));
+	}
+	return is;
+}
+
+struct BusesForStopResponse {
+	vector<string> buses;
+};
+
+ostream& operator << (ostream& os, const BusesForStopResponse& r) {
+	if (r.buses.empty()) {
+		os << "No stop" << endl;
+	}
+	else {
+		for (const string& bus : r.buses) {
+			os << bus << " ";
+		}
+		os << endl;
+	}
+
+	return os;
+}
+
+struct StopsForBusResponse {
+	string bus;
+	vector<pair<string, vector<string>>> stop_interchange;
+};
+
+ostream& operator << (ostream& os, const StopsForBusResponse& r) {
+	if (r.stop_interchange.empty()) {
+		os << "No bus" << endl;
+	}
+	else {
+		for (auto & pair : r.stop_interchange) {
+			os << "Stop " << pair.first << ": ";
+			if (pair.second.size() == 1) {
+				os << "no interchange" << endl;
+			}
+			else {
+				for (const string& other_bus : pair.second) {
+					if (other_bus != r.bus) {
+						os << other_bus << " ";
+					}
+				}
+				os << endl;
+			}
+		}
+	}
+	return os;
+}
+
+struct AllBusesResponse {
+	std::map<string, vector<string>> buses_to_stops;
+};
+
+ostream& operator << (ostream& os, const AllBusesResponse& r) {
+	if (r.buses_to_stops.empty()) {
+		os << "No buses" << endl;
+	}
+	else {
+		for (const auto& pair : r.buses_to_stops) {
+			os << "Bus " << pair.first << ": ";
+			for (const string& stop : pair.second) {
+				os << stop << " ";
+			}
+			os << endl;
+		}
+	}
+	return os;
+}
+
+class BusManager {
+
+	map<string, vector<string>> buses_to_stops;
+	map<string, vector<string>> stops_to_buses;
+
+public:
+	void AddBus(const string& bus, const vector<string>& stops) {
+		buses_to_stops[bus] = std::move(stops);
+		for (const string & stop : stops) {
+			stops_to_buses[stop].push_back(bus);
+		}
+
+	}
+
+	BusesForStopResponse GetBusesForStop(const string& stop) const {
+		if (stops_to_buses.count(stop)) {
+			return { stops_to_buses.at(stop) };
+		}
+		return {};
+	}
+
+	StopsForBusResponse GetStopsForBus(const string& bus) const {
+		StopsForBusResponse r;
+		r.bus = bus;
+		if (buses_to_stops.count(bus)) {
+			for (const string & stop : buses_to_stops.at(bus)) {
+				r.stop_interchange.emplace_back(stop, stops_to_buses.at(stop));
+			}
+		}
+		return r;
+	}
+
+	AllBusesResponse GetAllBuses() const {
+		return { buses_to_stops };
+	}
+};
+
+int main() {
+	int query_count;
+	Query q;
+
+	cin >> query_count;
+
+	BusManager bm;
+	for (int i = 0; i < query_count; ++i) {
+		cin >> q;
+		switch (q.type) {
+		case QueryType::NewBus:
+			bm.AddBus(q.bus, q.stops);
+			break;
+		case QueryType::BusesForStop:
+			cout << bm.GetBusesForStop(q.stop) << endl;
+			break;
+		case QueryType::StopsForBus:
+			cout << bm.GetStopsForBus(q.bus) << endl;
+			break;
+		case QueryType::AllBuses:
+			cout << bm.GetAllBuses() << endl;
+			break;
+		}
+	}
+
+	return 0;
+}
+#elif defined TASK_2
+// HERE ....
+#endif 
 #endif
